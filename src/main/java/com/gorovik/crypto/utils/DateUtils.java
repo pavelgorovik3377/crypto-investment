@@ -35,9 +35,9 @@ public class DateUtils {
         return calendar.getTime();
     }
 
-    public static Date getDayEnd(Date dayStart) {
+    public static Date getDayEnd(Date date) {
         Calendar calendar = Calendar.getInstance();
-        calendar.setTime(dayStart);
+        calendar.setTime(date);
         calendar.add(Calendar.DAY_OF_YEAR, 1);
         calendar.add(Calendar.MILLISECOND, -1);
         return calendar.getTime();

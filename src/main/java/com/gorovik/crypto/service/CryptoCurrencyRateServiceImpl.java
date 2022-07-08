@@ -1,7 +1,9 @@
 package com.gorovik.crypto.service;
 
+import com.gorovik.crypto.constants.Constants;
 import com.gorovik.crypto.entity.CryptoCurrencyRate;
-import com.gorovik.crypto.file.AllFileCurrencyRatesProvider;
+import com.gorovik.crypto.exception.BadRequestException;
+import com.gorovik.crypto.file.FileCurrencyRatesProvider;
 import com.gorovik.crypto.model.CurrencyStatistics;
 import com.gorovik.crypto.repository.CryptoCurrencyRateRepository;
 import com.gorovik.crypto.utils.DateUtils;
@@ -9,22 +11,28 @@ import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
 
-import javax.annotation.PostConstruct;
-import java.util.*;
+import java.util.Comparator;
+import java.util.Date;
+import java.util.List;
+import java.util.Map;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+import java.util.stream.StreamSupport;
 
 @Service
 public class CryptoCurrencyRateServiceImpl implements CryptoCurrencyRateService {
 
+    public static final String NO_CURRENCY_FORMAT = "Currency %s does not exist!";
+
     @Autowired
     private CryptoCurrencyRateRepository cryptoCurrencyRateRepository;
 
-    @PostConstruct
-    public void init() {
-        List<CryptoCurrencyRate> allCurrencyRates = AllFileCurrencyRatesProvider.getAllCurrencyRates();
-        cryptoCurrencyRateRepository.saveAll(allCurrencyRates);
+    @Override
+    public long saveAll(List<CryptoCurrencyRate> rates) {
+        Iterable<CryptoCurrencyRate> result = cryptoCurrencyRateRepository.saveAll(rates);
+        return StreamSupport.stream(result.spliterator(), false).count();
     }
 
     @Override
@@ -34,63 +42,49 @@ public class CryptoCurrencyRateServiceImpl implements CryptoCurrencyRateService 
 
     @Override
     public CurrencyStatistics calculateStats(String code) {
-        return getStats(code);
+        CryptoCurrencyRate oldest = cryptoCurrencyRateRepository.findTopByCurrencyCodeOrderByDateAsc(code);
+        CryptoCurrencyRate newest = cryptoCurrencyRateRepository.findTopByCurrencyCodeOrderByDateDesc(code);
+        CryptoCurrencyRate min = cryptoCurrencyRateRepository.findTopByCurrencyCodeOrderByCurrencyRateAsc(code);
+        CryptoCurrencyRate max = cryptoCurrencyRateRepository.findTopByCurrencyCodeOrderByCurrencyRateDesc(code);
+        if (ObjectUtils.allNotNull(oldest, newest, min, max)) {
+            return new CurrencyStatistics(code, oldest.getCurrencyRate(), newest.getCurrencyRate(), min.getCurrencyRate(), max.getCurrencyRate());
+        }
+        throw new BadRequestException(String.format(NO_CURRENCY_FORMAT, code));
     }
 
     @Override
     public List<String> getCurrenciesTopList() {
-        Comparator<Map.Entry<String, Double>> entryComparator = Map.Entry.comparingByValue();
-        return findAllCryptoCurrencies().stream()
-                .map(c -> Pair.of(c, getNormalizedRange(c)))
-                .sorted(entryComparator.reversed())
-                .map(Pair::getKey)
-                .collect(Collectors.toList());
+        return getCurrenciesTopList(this::getNormalizedRange);
     }
 
     @Override
     public List<String> getCurrenciesTopList(Date date) {
+        return getCurrenciesTopList(c -> getNormalizedRange(c, date));
+    }
+
+    @Override
+    public long uploadRatesFromFile(MultipartFile file) {
+        List<CryptoCurrencyRate> ratesFromFile = FileCurrencyRatesProvider.getRatesFromFile(file);
+        return saveAll(ratesFromFile);
+    }
+
+    private List<String> getCurrenciesTopList(Function<String, Double> normGetter) {
         Comparator<Map.Entry<String, Double>> entryComparator = Map.Entry.comparingByValue();
         return findAllCryptoCurrencies().stream()
-                .map(c -> Pair.of(c, getNormalizedRange(c, date)))
+                .map(c -> Pair.of(c, normGetter.apply(c)))
+                .filter(p -> p.getValue() != null)
                 .sorted(entryComparator.reversed())
                 .map(Pair::getKey)
                 .collect(Collectors.toList());
     }
 
-    @Override
-    public int uploadRatesFromFile() {
-        return 0;
+    private Double getNormalizedRange(String currency) {
+        return cryptoCurrencyRateRepository.getNormByCurrencyCode(currency);
     }
 
-    private double getNormalizedRange(String currency) {
-        Double norm = cryptoCurrencyRateRepository.getNormByCurrencyCode(currency);
-        if (norm == null) {
-            String format = "Currency %s does not exist!";
-            throw new IllegalStateException(String.format(format, currency));
-        }
-        return norm;
-    }
-
-    private double getNormalizedRange(String currency, Date date) {
+    private Double getNormalizedRange(String currency, Date date) {
         Date dayStart = DateUtils.getDayStart(date);
         Date dayEnd = DateUtils.getDayEnd(dayStart);
-        Double norm = cryptoCurrencyRateRepository.getNormByCurrencyCodeAndDateBetween(currency, dayStart, dayEnd);
-        if (norm == null) {
-            String format = "Currency %s does not exist!";
-            throw new IllegalStateException(String.format(format, currency));
-        }
-        return norm;
-    }
-
-    private CurrencyStatistics getStats(String currency) {
-        CryptoCurrencyRate oldest = cryptoCurrencyRateRepository.findTopByCurrencyCodeOrderByDateAsc(currency);
-        CryptoCurrencyRate newest = cryptoCurrencyRateRepository.findTopByCurrencyCodeOrderByDateDesc(currency);
-        CryptoCurrencyRate min = cryptoCurrencyRateRepository.findTopByCurrencyCodeOrderByRateAsc(currency);
-        CryptoCurrencyRate max = cryptoCurrencyRateRepository.findTopByCurrencyCodeOrderByRateDesc(currency);
-        if (ObjectUtils.allNotNull(oldest, newest, min, max)) {
-            return new CurrencyStatistics(oldest.getRate(), newest.getRate(), min.getRate(), max.getRate());
-        }
-        String format = "Currency %s does not exist!";
-        throw new IllegalStateException(String.format(format, currency));
+        return cryptoCurrencyRateRepository.getNormByCurrencyCodeAndDateBetween(currency, dayStart, dayEnd);
     }
 }

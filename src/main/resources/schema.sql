@@ -3,5 +3,6 @@ CREATE TABLE CRYPTO_CURRENCY_RATE (
 id INT AUTO_INCREMENT PRIMARY KEY,
 currency_code VARCHAR(20) NOT NULL,
 currency_rate NUMERIC(20, 2) NOT NULL,
-date TIMESTAMP
+date TIMESTAMP,
+CONSTRAINT code_date UNIQUE (currency_code, date)
 );

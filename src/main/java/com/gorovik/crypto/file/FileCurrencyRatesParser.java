@@ -4,10 +4,12 @@ import com.gorovik.crypto.entity.CryptoCurrencyRate;
 import com.gorovik.crypto.exception.FileParsingException;
 import com.opencsv.CSVReader;
 import com.opencsv.exceptions.CsvValidationException;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
@@ -19,19 +21,15 @@ public class FileCurrencyRatesParser {
     public static final String ERROR_RATE_PARSING = "Error parsing currency rate!";
     public static final String ERROR_TIME_MS_PARSING = "Error parsing currency time in milliseconds!";
 
-    private FileCurrencyRatesParser(File file) throws IOException {
+    public FileCurrencyRatesParser(File file) throws IOException {
         reader = new CSVReader(new FileReader(file));
     }
 
-    public static List<CryptoCurrencyRate> getRatesFromFile(File file) {
-        try {
-            return new FileCurrencyRatesParser(file).parseRates();
-        } catch (CsvValidationException | IOException e) {
-            throw new FileParsingException(e);
-        }
+    public FileCurrencyRatesParser(MultipartFile file) throws IOException {
+        reader = new CSVReader(new InputStreamReader(file.getInputStream()));
     }
 
-    private List<CryptoCurrencyRate> parseRates() throws CsvValidationException, IOException {
+    public List<CryptoCurrencyRate> parseRates() throws CsvValidationException, IOException {
         reader.skip(1);
         List<CryptoCurrencyRate> result = new ArrayList<>();
         CryptoCurrencyRate cryptoCurrencyRate;

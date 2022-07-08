@@ -3,7 +3,6 @@ package com.gorovik.crypto.entity;
 import com.gorovik.crypto.utils.DateUtils;
 
 import javax.persistence.*;
-import java.text.SimpleDateFormat;
 import java.util.Date;
 
 @Entity
@@ -11,14 +10,14 @@ import java.util.Date;
 public class CryptoCurrencyRate {
 
     @Id
-    @GeneratedValue(strategy=GenerationType.IDENTITY)
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
     @Column(name = "currency_code")
     private String currencyCode;
 
     @Column(name = "currency_rate")
-    private double rate;
+    private double currencyRate;
 
     @Temporal(TemporalType.TIMESTAMP)
     @Column(name = "date")
@@ -27,9 +26,9 @@ public class CryptoCurrencyRate {
     public CryptoCurrencyRate() {
     }
 
-    public CryptoCurrencyRate(String currencyCode, double rate, Date date) {
+    public CryptoCurrencyRate(String currencyCode, double currencyRate, Date date) {
         this.currencyCode = currencyCode;
-        this.rate = rate;
+        this.currencyRate = currencyRate;
         this.date = date;
     }
 
@@ -41,8 +40,8 @@ public class CryptoCurrencyRate {
         return currencyCode;
     }
 
-    public double getRate() {
-        return rate;
+    public double getCurrencyRate() {
+        return currencyRate;
     }
 
     public Date getDate() {
@@ -57,8 +56,8 @@ public class CryptoCurrencyRate {
         this.currencyCode = currencyCode;
     }
 
-    public void setRate(double rate) {
-        this.rate = rate;
+    public void setCurrencyRate(double currencyRate) {
+        this.currencyRate = currencyRate;
     }
 
     public void setDate(Date date) {
@@ -68,6 +67,6 @@ public class CryptoCurrencyRate {
     @Override
     public String toString() {
         String dateString = DateUtils.formatDate(date, DateUtils.DATE_TIME_FORMAT);
-        return String.format("Currency: %s, rate: %.2f, date: %s", currencyCode, rate, dateString);
+        return String.format("Currency: %s, rate: %.2f, date: %s", currencyCode, currencyRate, dateString);
     }
 }

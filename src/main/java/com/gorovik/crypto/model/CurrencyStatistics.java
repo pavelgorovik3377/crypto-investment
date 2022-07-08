@@ -1,17 +1,34 @@
 package com.gorovik.crypto.model;
 
+/**
+ * Stores information about the oldest, newest, minimal and maximal rate of a crypto currency.
+ */
 public class CurrencyStatistics {
 
-    double oldest;
-    double newest;
-    double minimum;
-    double maximum;
+    private String currencyCode;
 
-    public CurrencyStatistics(double oldest, double newest, double minimum, double maximum) {
+    private double oldest;
+
+    private double newest;
+
+    private double minimum;
+
+    private double maximum;
+
+    public CurrencyStatistics(String currencyCode, double oldest, double newest, double minimum, double maximum) {
+        this.currencyCode = currencyCode;
         this.oldest = oldest;
         this.newest = newest;
         this.minimum = minimum;
         this.maximum = maximum;
+    }
+
+    public String getCurrencyCode() {
+        return currencyCode;
+    }
+
+    public void setCurrencyCode(String currencyCode) {
+        this.currencyCode = currencyCode;
     }
 
     public double getOldest() {

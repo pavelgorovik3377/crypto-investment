@@ -1,5 +1,6 @@
 package com.gorovik.crypto.file;
 
+import com.gorovik.crypto.constants.Constants;
 import com.gorovik.crypto.exception.FileParsingException;
 
 import java.io.*;
@@ -9,6 +10,8 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class FilesProvider {
+
+    private static final String SLASH = "/";
 
     private final String path;
 
@@ -34,7 +37,7 @@ public class FilesProvider {
     }
 
     private File getFile(String fileName) {
-        URL resource = getResource(path + "/" + fileName);
+        URL resource = getResource(path + Constants.SLASH + fileName);
         try {
             if (resource == null) {
                 throw new FileParsingException();
