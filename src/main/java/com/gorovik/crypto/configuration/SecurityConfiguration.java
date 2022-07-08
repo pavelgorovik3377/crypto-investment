@@ -9,8 +9,7 @@ public class SecurityConfiguration {
 
     @Bean
     public WebSecurityCustomizer webSecurityCustomizer() {
-        //return (web) -> web.ignoring().antMatchers("/h2-console/**");
-        return (web) -> web.ignoring().anyRequest();
+        return (web) -> web.ignoring().antMatchers("/currency/**", "/h2-console/**");
     }
 
 }
